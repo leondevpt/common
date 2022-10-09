@@ -92,7 +92,6 @@ func NewJSONLogger(opts ...Option) (*zap.Logger, error) {
 	logger := zap.New(core,
 		zap.AddCaller(),
 		zap.ErrorOutput(stderr),
-		zap.AddCallerSkip(1),
 	)
 
 	for key, value := range opt.fields {

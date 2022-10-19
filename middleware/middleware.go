@@ -1,28 +1,59 @@
 package middleware
 
 import (
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"fmt"
-	"google.golang.org/grpc/metadata"
+	"log"
+	"net/http"
+	"runtime/debug"
 )
 
-type Middleware func(ctx context.Context) (context.Context, error)
+type Middleware func(http.Handler) http.Handler
 
-func MiddlewareFunc(middlewareFunc Middleware) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		fmt.Println("获取用户信息")
-		newCtx, err := middlewareFunc(ctx)
-		if err != nil {
-			return nil, err
+func ChainMiddleware(h http.Handler, m ...Middleware) http.Handler {
+	if len(m) < 1 {
+		return h
+	}
+
+	wrappedHandler := h
+	for i := len(m) - 1; i >= 0; i-- {
+		wrappedHandler = m[i](wrappedHandler)
+	}
+
+	return wrappedHandler
+}
+
+
+func CORSMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET,POST")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token, Authorization, X-Request-ID")
+			return
+		} else {
+			next.ServeHTTP(w, r)
 		}
-		return handler(newCtx, req)
+	})
+}
+
+
+func panicRecovery(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				log.Println(string(debug.Stack()))
+			}
+		}()
+		next(w, req)
 	}
 }
 
-func GetUserInfo(ctx context.Context) (newCtx context.Context, err error) {
-	md, _ := metadata.FromIncomingContext(ctx)
-	token, _ := md["token"]
-	newCtx = context.WithValue(ctx, "token", token)
-	return
+
+func headerMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next(w, r)
+	}
 }

@@ -28,7 +28,7 @@ func GetLog() *zap.Logger {
 }
 
 // NewJSONLogger return a json-encoder zap logger,
-func NewJSONLogger(opts ...Option) (*zap.Logger, error) {
+func NewZapLogger(opts ...Option) (*zap.Logger, error) {
 	opt := generateOption(opts...)
 
 	// similar to zap.NewProductionEncoderConfig()

@@ -55,8 +55,8 @@ func (c *consul) RegisterService(opt RegisterOption) error {
 
 	srv := &api.AgentServiceRegistration{
 		ID:      opt.ServiceID, // 服务唯一ID
-		Name:    opt.ServiceName,                                    // 服务名称
-		Tags:    opt.Tags,  //[]string{"hello"},             // 为服务打标签
+		Name:    opt.ServiceName,       // 服务名称
+		Tags:    opt.Tags,             // 为服务打标签
 		Address: opt.ServiceIP,
 		Port:    opt.ServicePort,
 	}

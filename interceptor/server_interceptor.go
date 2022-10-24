@@ -19,13 +19,13 @@ func AccessLog(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
 	md, _ := metadata.FromIncomingContext(ctx)
 	beginTime := time.Now()
 	beginTimeUnix := beginTime.Local().Unix()
-	zap.S().Infof("access request log: method: %s, begin_time: %d, request: %v, metadata: %v\n",
+	zap.S().Infof("access request: method: %s, begin_time: %d, request: %v, metadata: %v\n",
 		info.FullMethod, beginTimeUnix, req, md)
 
 	resp, err := handler(ctx, req)
 
 	endTimeUnix := time.Now().Local().Unix()
-	zap.S().Infof("access response log: method: %s, begin_time: %d, end_time: %d, cost:%s,response: %v, metadata: %v",
+	zap.S().Infof("access response: method: %s, begin_time: %d, end_time: %d, cost:%s,response: %v, metadata: %v",
 		info.FullMethod, beginTimeUnix, endTimeUnix, time.Since(beginTime), resp, md)
 	return resp, err
 }
@@ -36,7 +36,7 @@ func ErrorLog(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, 
 	resp, err := handler(ctx, req)
 	if err != nil {
 		s,_:= status.FromError(err)
-		zap.S().Infof("error log: method: %s, code: %v, message: %v, details: %v,metadata: %v\n",
+		zap.S().Infof("error: method: %s, code: %v, message: %v, details: %v,metadata: %v\n",
 			info.FullMethod, s.Code(), s.Err().Error(), s.Details(), md)
 	}
 	return resp, err
